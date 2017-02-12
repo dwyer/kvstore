@@ -7,12 +7,22 @@ from django.views.decorators.csrf import csrf_exempt
 
 from . import models
 
+from hashlib import sha224 as hashalg
+
 
 class TextResponse(HttpResponse):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, content=None, *args, **kwargs):
+        if isinstance(content, list):
+            content = '\n'.join(map(str, content))
+        elif isinstance(content, dict):
+            lst = []
+            for key, value in content.items():
+                checksum = hashalg(value).hexdigest()
+                lst.append('\n'.join((key, checksum, value, checksum)))
+            content = '\n'.join(lst)
         kwargs['content_type'] = 'text/plain'
-        super(TextResponse, self).__init__(*args, **kwargs)
+        super(TextResponse, self).__init__(content, *args, **kwargs)
 
 
 def token_required(func):
@@ -39,7 +49,7 @@ class StoreListView(View):
     def post(self, request):
         store = models.Store()
         store.save()
-        return JsonResponse({'store': store.id})
+        return TextResponse(store.id)
 
 
 class StoreDetailView(View):
@@ -57,7 +67,7 @@ class StoreDetailView(View):
     @method_decorator(token_required)
     def delete(self, request, store_id):
         get_object_or_404(models.Store, pk=store_id).delete()
-        return JsonResponse({})
+        return TextResponse()
 
 
 class KeyListView(View):
@@ -65,9 +75,7 @@ class KeyListView(View):
     @method_decorator(token_required)
     def get(self, request, store_id):
         store = get_object_or_404(models.Store, pk=store_id)
-        return JsonResponse({
-            'keys': [value.key for value in store.value_set.all()],
-        })
+        return TextResponse([value.key for value in store.value_set.all()])
 
 
 class ValueListView(View):
@@ -75,7 +83,7 @@ class ValueListView(View):
     @method_decorator(token_required)
     def get(self, request, store_id):
         store = get_object_or_404(models.Store, pk=store_id)
-        return JsonResponse(dict((value.key, value.value)
+        return TextResponse(dict((value.key, value.value)
                                  for value in store.value_set.all()))
 
 
@@ -94,12 +102,12 @@ class ValueDetailView(View):
         if not created:
             value.value = request.body
             value.save()
-        return JsonResponse({'value': value.value})
+        return TextResponse()
 
     @method_decorator(token_required)
     def delete(self, request, store_id, key):
         get_object_or_404(models.Value, store_id=store_id, key=key).delete()
-        return JsonResponse({})
+        return TextResponse()
 
 
 class TokenListView(View):
@@ -108,13 +116,13 @@ class TokenListView(View):
     def get(self, request, store_id):
         tokens = models.Token.objects.filter(store_id=store_id)
         tokens = [token.id for token in tokens]
-        return JsonResponse({'tokens': tokens})
+        return TextResponse(tokens)
 
     @method_decorator(token_required)
     def post(self, request, store_id):
         token = models.Token(store_id=store_id)
         token.save()
-        return JsonResponse({'token': token.id})
+        return TextResponse(token.id)
 
 
 class TokenDetailView(View):
@@ -122,4 +130,4 @@ class TokenDetailView(View):
     def delete(self, request, store_id, token_id):
         get_object_or_404(models.Token, store_id=store_id,
                           pk=token_id).delete()
-        return JsonResponse({})
+        return TextResponse()

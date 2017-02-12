@@ -31,7 +31,7 @@ class ApiClient(object):
                                            self.store, self.token)
 
     def new_store(self):
-        return self._fetch('/stores', data={})['store']
+        return self._fetch('/stores', data={})
 
     def get_store(self):
         return self._fetch('/stores/%s' % self.store)
@@ -40,10 +40,10 @@ class ApiClient(object):
         return self._fetch('/stores/%s' % self.store, method='DELETE')
 
     def new_token(self):
-        return self._fetch('/stores/%s/tokens' % (self.store), {})['token']
+        return self._fetch('/stores/%s/tokens' % (self.store), {})
 
     def get_tokens(self):
-        return self._fetch('/stores/%s/tokens' % (self.store))['tokens']
+        return self._fetch('/stores/%s/tokens' % (self.store)).split()
 
     def delete_token(self, token):
         return self._fetch('/stores/%s/tokens/%s' % (self.store, token),

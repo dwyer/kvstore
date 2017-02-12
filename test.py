@@ -60,9 +60,11 @@ except api.NotAuthorized as e:
 
 client.token = token
 
-assert len(client.get_tokens()) == 1
+tokens = client.get_tokens()
+assert len(tokens) == 1, tokens
 token = client.new_token()
-assert len(client.get_tokens()) == 2
+tokens = client.get_tokens()
+assert len(tokens) == 2, tokens
 
 client.delete_token(client.token)
 
@@ -73,11 +75,13 @@ except api.NotAuthorized as e:
     pass
 
 client.token = token
-assert len(client.get_tokens()) == 1
+tokens = client.get_tokens()
+assert len(tokens) == 1, tokens
 
 client.delete_token(client.token)
 client.token = None
-assert len(client.get_tokens()) == 0
+tokens = client.get_tokens()
+assert len(tokens) == 0, tokens
 
 client.set('error', 'error')
 assert client.get('error') == 'error'
