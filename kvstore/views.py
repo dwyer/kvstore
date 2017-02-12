@@ -17,7 +17,7 @@ class TextResponse(HttpResponse):
 
 def token_required(func):
     def _wrap(request, store_id, *args, **kwargs):
-        store = models.Store.objects.get(pk=store_id)
+        store = get_object_or_404(models.Store, pk=store_id)
         tokens = store.token_set.all()
         if tokens.count():
             try:
