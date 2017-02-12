@@ -44,6 +44,7 @@ class StoreListView(View):
 
 class StoreDetailView(View):
 
+    @method_decorator(token_required)
     def get(self, request, store_id):
         store = get_object_or_404(models.Store, pk=store_id)
         return JsonResponse({
