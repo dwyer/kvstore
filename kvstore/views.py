@@ -60,6 +60,25 @@ class StoreDetailView(View):
         return JsonResponse({})
 
 
+class KeyListView(View):
+
+    @method_decorator(token_required)
+    def get(self, request, store_id):
+        store = get_object_or_404(models.Store, pk=store_id)
+        return JsonResponse({
+            'keys': [value.key for value in store.value_set.all()],
+        })
+
+
+class ValueListView(View):
+
+    @method_decorator(token_required)
+    def get(self, request, store_id):
+        store = get_object_or_404(models.Store, pk=store_id)
+        return JsonResponse(dict((value.key, value.value)
+                                 for value in store.value_set.all()))
+
+
 class ValueDetailView(View):
 
     def get(self, request, store_id, key):
