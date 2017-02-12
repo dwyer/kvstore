@@ -14,9 +14,8 @@ def token_required(func):
         tokens = store.token_set.all()
         if tokens.count():
             try:
-                token_id = request.GET.get('token')
-                tokens.get(pk=token_id)
-            except models.Token.DoesNotExist:
+                tokens.get(pk=request.META['HTTP_X_TOKEN'])
+            except (KeyError, models.Token.DoesNotExist):
                 raise PermissionDenied
         return func(request, store_id, *args, **kwargs)
     return _wrap

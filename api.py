@@ -62,11 +62,12 @@ class ApiClient(object):
 
     def _fetch(self, path, data=None, method=None):
         url = self.BASE_URL + path
+        headers = {}
         if self.token is not None:
-            url += '?token=%s' % self.token
+            headers['X-Token'] = self.token
         if data is not None:
             data = urllib.urlencode(data)
-        request = urllib2.Request(url, data=data)
+        request = urllib2.Request(url, data=data, headers=headers)
         if method is not None:
             request.get_method = lambda: method
         try:
