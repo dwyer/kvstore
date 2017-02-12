@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.http import JsonResponse
 
 from . import views
 
@@ -30,3 +31,11 @@ urlpatterns = [
     url(r'^api/stores/(?P<store_id>[\w-]{36})/values/(?P<key>[\w-]{,255})$',
         views.ValueDetailView.as_view()),
 ]
+
+
+def handler403(request, reason=None):
+    return JsonResponse({'error': 'Not authorized.'}, status=403)
+
+
+def handler404(request):
+    return JsonResponse({'error': 'Not found.'}, status=404)

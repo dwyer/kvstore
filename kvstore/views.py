@@ -1,4 +1,6 @@
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -15,17 +17,9 @@ def token_required(func):
                 token_id = request.GET.get('token')
                 tokens.get(pk=token_id)
             except models.Token.DoesNotExist:
-                return not_authorized()
+                raise PermissionDenied
         return func(request, store_id, *args, **kwargs)
     return _wrap
-
-
-def not_authorized():
-    return JsonResponse({'error': 'Not authorized.'}, status=403)
-
-
-def not_found():
-    return JsonResponse({'error': 'Not found.'}, status=404)
 
 
 class StoreListView(View):
@@ -45,10 +39,7 @@ class StoreListView(View):
 class StoreDetailView(View):
 
     def get(self, request, store_id):
-        try:
-            store = models.Store.objects.get(pk=store_id)
-        except models.Store.DoesNotExist:
-            return not_found()
+        store = get_object_or_404(models.Store, pk=store_id)
         return JsonResponse({
             'store': store.id,
             'tokens': [token.id for token in store.token_set.all()],
@@ -58,28 +49,19 @@ class StoreDetailView(View):
 
     @method_decorator(token_required)
     def delete(self, request, store_id):
-        try:
-            models.Store.objects.get(pk=store_id).delete()
-        except models.Store.DoesNotExist:
-            return not_found()
+        get_object_or_404(models.Store, pk=store_id).delete()
         return JsonResponse({})
 
 
 class ValueDetailView(View):
 
     def get(self, request, store_id, key):
-        try:
-            value = models.Value.objects.get(store_id=store_id, key=key)
-        except (models.Store.DoesNotExist, models.Value.DoesNotExist):
-            return not_found()
+        value = get_object_or_404(models.Value, store_id=store_id, key=key)
         return JsonResponse({'value': value.value})
 
     @method_decorator(token_required)
     def post(self, request, store_id, key):
-        try:
-            store = models.Store.objects.get(pk=store_id)
-        except (models.Store.DoesNotExist):
-            return not_found()
+        store = get_object_or_404(models.Store, pk=store_id)
         value = request.POST['value']
         value, created = models.Value.objects.get_or_create(
             store=store, key=key, defaults={'value': value})
@@ -90,10 +72,7 @@ class ValueDetailView(View):
 
     @method_decorator(token_required)
     def delete(self, request, store_id, key):
-        try:
-            models.Value.objects.get(store_id=store_id, key=key).delete()
-        except models.Value.DoesNotExist:
-            return not_found()
+        get_object_or_404(models.Value, store_id=store_id, key=key).delete()
         return JsonResponse({})
 
 
@@ -115,9 +94,6 @@ class TokenListView(View):
 class TokenDetailView(View):
 
     def delete(self, request, store_id, token_id):
-        try:
-            token = models.Token.objects.get(store_id=store_id, pk=token_id)
-        except models.Token.DoesNotExist:
-            return not_found()
-        token.delete()
+        get_object_or_404(models.Token, store_id=store_id,
+                          pk=token_id).delete()
         return JsonResponse({})
