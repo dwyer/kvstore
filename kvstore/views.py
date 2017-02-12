@@ -1,11 +1,18 @@
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from . import models
+
+
+class TextResponse(HttpResponse):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['content_type'] = 'text/plain'
+        super(TextResponse, self).__init__(*args, **kwargs)
 
 
 def token_required(func):
@@ -56,16 +63,16 @@ class ValueDetailView(View):
 
     def get(self, request, store_id, key):
         value = get_object_or_404(models.Value, store_id=store_id, key=key)
-        return JsonResponse({'value': value.value})
+        return TextResponse(value.value)
 
     @method_decorator(token_required)
     def post(self, request, store_id, key):
         store = get_object_or_404(models.Store, pk=store_id)
-        value = request.POST['value']
+        value = request.body
         value, created = models.Value.objects.get_or_create(
             store=store, key=key, defaults={'value': value})
         if not created:
-            value.value = request.POST['value']
+            value.value = request.body
             value.save()
         return JsonResponse({'value': value.value})
 

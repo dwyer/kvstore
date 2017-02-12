@@ -50,11 +50,11 @@ class ApiClient(object):
                            method='DELETE')
 
     def get(self, key):
-        return self._fetch('/stores/%s/values/%s' % (self.store, key))['value']
+        return self._fetch('/stores/%s/values/%s' % (self.store, key))
 
     def set(self, key, value):
         return self._fetch('/stores/%s/values/%s' % (self.store, key),
-                           data={'value': value})
+                           data=value)
 
     def delete(self, key):
         return self._fetch('/stores/%s/values/%s' % (self.store, key),
@@ -65,14 +65,17 @@ class ApiClient(object):
         headers = {}
         if self.token is not None:
             headers['X-Token'] = self.token
-        if data is not None:
+        if isinstance(data, dict):
             data = urllib.urlencode(data)
         request = urllib2.Request(url, data=data, headers=headers)
         if method is not None:
             request.get_method = lambda: method
         try:
             with contextlib.closing(urllib2.urlopen(request)) as response:
-                return json.load(response)
+                if response.headers['Content-Type'] == 'application/json':
+                    return json.load(response)
+                else:
+                    return response.read()
         except urllib2.HTTPError as e:
             if e.code == 403:
                 raise NotAuthorized()
